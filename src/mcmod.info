@@ -1,0 +1,8 @@
+[{
+  "modid": "langswitch",
+  "name": "LangSwitch",
+  "description": "A localization service for SpongePowered plugins",
+  "version": "1.0",
+  "url": "https://github.com/DosMike/LangSwitch",
+  "authorList": [ "DosMike" ]
+}]
