@@ -40,6 +40,9 @@ You can receive a PluginTranslation object either from
 `languageService().getTranslation(this)`. The later method returns a optional 
 that will be empty if registerTranslation was not yet called.
 
+**Don't forget that your plugin now depends on LangSwitch so you'll have to add the dependency in your mcmod.info like**
+`"dependencies": [ "langswitch" ]`
+
 From the PluginTranslation you normally proceed like
 ```
 Localized<String> localized = translation.local("cmd.success");
