@@ -45,7 +45,7 @@ import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 
-@Plugin(id="langswitch", name="LangSwitch", authors="DosMike", version="1.1")
+@Plugin(id="langswitch", name="LangSwitch", authors="DosMike", version="1.1.1")
 public class LangSwitch {
 	static LangSwitch instance;
 //	static Lang myL;
@@ -176,7 +176,7 @@ public class LangSwitch {
 					
 					BufferedReader br=null;
 					try {
-						br = new BufferedReader(new InputStreamReader(new FileInputStream(to)));
+						br = new BufferedReader(new InputStreamReader(new FileInputStream(to), "UTF8"));
 						String line;
 						while ((line=br.readLine())!=null) {
 							if (line.isEmpty() || line.startsWith("#")) continue;
