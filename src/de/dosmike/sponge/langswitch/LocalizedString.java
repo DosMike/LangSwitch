@@ -1,15 +1,19 @@
 package de.dosmike.sponge.langswitch;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
+import org.apache.commons.lang3.StringUtils;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.profile.GameProfile;
+import org.spongepowered.api.text.serializer.TextSerializers;
 
 import de.dosmike.sponge.languageservice.API.Localized;
 
@@ -27,9 +31,24 @@ public class LocalizedString implements Localized<String> {
 	
 	private String replace(String string) {
 		if (lang==null) return path;
-		String replace = string;
-		for (Entry<String, Object> e : replacements.entrySet())
-			replace = replace.replace(e.getKey(), e.getValue().toString());
+		String replace = TextSerializers.LEGACY_FORMATTING_CODE.stripCodes(string);
+		Set<String> unusedPlaceholders = new HashSet<>();
+		unusedPlaceholders.addAll(replacements.keySet()); //for translators
+		boolean round=true;
+		
+		while(round) {
+			round=false;
+			for (Entry<String, Object> e : replacements.entrySet()) {
+				if (replace.contains(e.getKey())) { round=true;
+					unusedPlaceholders.remove(e.getKey());
+					replace = replace.replace(e.getKey(), e.getValue().toString());
+					break;
+				}
+			}
+		}
+		if (!unusedPlaceholders.isEmpty())
+			LangSwitch.l("Localisation %s does not use the following placeholder: %s", path, StringUtils.join(unusedPlaceholders, ", "));
+		
 		return replace;
 	}
 	LocalizedString(String path) {
@@ -56,7 +75,10 @@ public class LocalizedString implements Localized<String> {
 	public Optional<String> resolve(UUID playerID) {
 		if (lang==null)return Optional.empty();
 		Locale loc = LangSwitch.playerLang.get(playerID);
-		Optional<String> optional = lang.query(path, loc, lang.def);
+		return resolve(loc);
+	}
+	public Optional<String> resolve(Locale language) {
+		Optional<String> optional = lang.query(path, language, lang.def);
 		if (!optional.isPresent()) return optional;
 		return Optional.of(replace(optional.get()));
 	}

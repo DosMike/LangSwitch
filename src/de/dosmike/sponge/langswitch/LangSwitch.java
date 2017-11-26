@@ -45,7 +45,7 @@ import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 
-@Plugin(id="langswitch", name="LangSwitch", authors="DosMike", version="1.1.1")
+@Plugin(id="langswitch", name="LangSwitch", authors="DosMike", version="1.1.2")
 public class LangSwitch {
 	static LangSwitch instance;
 //	static Lang myL;
@@ -68,10 +68,15 @@ public class LangSwitch {
 			@Override
 			public CommandResult execute(CommandSource src, CommandContext args) throws CommandException {
 				if (!(src instanceof Player)) { src.sendMessage(Text.of("Only available for players")); return CommandResult.success(); }
-				String lang = (String) args.getOne("Language").get();
-				lang = lang.replace('_', '-'); //Locales toString used a underscore but the language tag requires a dash
-				Locale locale = Locale.forLanguageTag(lang);
-				playerChangedLang(((Player)src).getProfile(), locale);
+				Optional<String> la = args.<String>getOne("Language");
+				if (!la.isPresent()) {
+					src.sendMessage(Text.of(playerLang.get(((Player)src).getUniqueId()).toString()));
+				} else {
+					String lang = la.get();
+					lang = lang.replace('_', '-'); //Locales toString used a underscore but the language tag requires a dash
+					Locale locale = Locale.forLanguageTag(lang);
+					playerChangedLang(((Player)src).getProfile(), locale);
+				}
 				return CommandResult.success();
 			}
 		}).build(), "language");
@@ -180,7 +185,8 @@ public class LangSwitch {
 						String line;
 						while ((line=br.readLine())!=null) {
 							if (line.isEmpty() || line.startsWith("#")) continue;
-							int split; if ((split=line.indexOf(':'))<=0) throw new RuntimeException("Translations are formatted [\\w\\.]+:.* (numers, letters underscores and dots > colon > some text)");
+							int split = first(line.indexOf(':'), line.indexOf('=')); //allow the usage of either key.sub:value or key.sub=value
+							if (split<=0) throw new RuntimeException("Translations are formatted [\\w\\.]+:.* (numers, letters underscores and dots > colon > some text)");
 							String k=line.substring(0, split);
 							if (!k.matches("[\\w\\.]+")) throw new RuntimeException("Translations are formatted [\\w\\.]+:.* (numers, letters underscores and dots > colon > some text)");
 							String v=line.substring(split+1);
@@ -198,6 +204,17 @@ public class LangSwitch {
 				}
 			}
 		});
+	}
+	
+	private static int first(int a, int b) {
+		return (a>=0 && b>=0 //both valid
+				? (a<b?a:b) //minimum
+				: (a>=0 //only a valid
+				  ? a //a
+				  : (b>=0) //only b valid
+				    ? b //b
+				    : -1 //nothing
+				));
 	}
 	
 	public static void unloadLangIfUnused(Locale lang) {

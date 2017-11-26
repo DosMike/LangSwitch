@@ -1,6 +1,7 @@
 package de.dosmike.sponge.langswitch;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -33,33 +34,46 @@ public class LocalizedText implements Localized<Text> {
 	private Text replace(String string) {
 		if (lang==null)return Text.of(path);
 		List<Object> elements = new LinkedList<>();
-		Set<String> unusedPlaceholders = replacements.keySet(); //for translators
+		Set<String> unusedPlaceholders = new HashSet<>();
+		unusedPlaceholders.addAll(replacements.keySet()); //for translators
 		elements.add(string);
 		boolean round=true;
 		while (round) {
 			round=false;
-			for (int i=0; i<elements.size(); i++) {
+			i: for (int i=0; i<elements.size(); i++) {
 				if (elements.get(i) instanceof String) {
 					String val = (String)elements.get(i);
 					for (Entry<String, Object> e : replacements.entrySet()) {
 						int pos=val.indexOf(e.getKey()); 
 						if (pos>=0) { round=true;
 							unusedPlaceholders.remove(e.getKey());
-							if (pos+e.getKey().length()<val.length()) elements.add(i+1, val.substring(pos+e.getKey().length()));
+							
+							if (pos+e.getKey().length()<val.length())
+								elements.add(i+1, val.substring(pos+e.getKey().length()));
 							elements.add(i+1, e.getValue());
-							if (pos>0) elements.add(i+1, val.substring(0, pos));
+							if (pos>0)
+								elements.add(i+1, val.substring(0, pos));
 							elements.remove(i);
-							break;
+							
+							break i;
 						}
 					}
 				}
 			}
 		}
 		if (!unusedPlaceholders.isEmpty())
-			LangSwitch.l(String.format("Localisation %s[%s] does not use the following placeholder: %s", path, lang.toString(), StringUtils.join(unusedPlaceholders, ", ")));
+			LangSwitch.l("Localisation %s does not use the following placeholder: %s", path, StringUtils.join(unusedPlaceholders, ", "));
 		
 		Text.Builder result = Text.builder();
-		for (Object o : elements) if (o instanceof Text) result.append((Text)o); else { result.append(Text.of(o)); }
+		for (Object o : elements) 
+			if (o instanceof Text) 
+				result.append((Text)o); 
+			//not deserializing legacy code is the only thing that let's them work in this case, since they need to apply for the rest of the result
+//			else if (o instanceof String)
+//				result.append( TextSerializers.FORMATTING_CODE.deserializeUnchecked((String)o) ); 
+//				result.append( TextSerializers.LEGACY_FORMATTING_CODE.deserializeUnchecked((String)o) );
+			else 
+				result.append(Text.of(o));
 		return result.build();
 	}
 	
@@ -87,7 +101,10 @@ public class LocalizedText implements Localized<Text> {
 	public Optional<Text> resolve(UUID playerID) {
 		if (lang==null)return Optional.empty();
 		Locale loc = LangSwitch.playerLang.get(playerID);
-		Optional<String> optional = lang.query(path, loc, lang.def);
+		return resolve(loc);
+	}
+	public Optional<Text> resolve(Locale language) {
+		Optional<String> optional = lang.query(path, language, lang.def);
 		if (!optional.isPresent()) return Optional.empty();
 		return Optional.of(replace(optional.get()));
 	}
