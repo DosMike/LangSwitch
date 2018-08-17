@@ -45,11 +45,14 @@ import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 
-@Plugin(id="langswitch", name="LangSwitch", authors="DosMike", version="1.1.2")
+@Plugin(id="langswitch", name="LangSwitch", authors="DosMike", version="1.2")
 public class LangSwitch {
 	static LangSwitch instance;
 //	static Lang myL;
 	static String[] available;
+
+	static boolean verbose=true;
+
 	static {
 		Locale[] locs = Locale.getAvailableLocales();
 		available = new String[locs.length];
@@ -89,6 +92,22 @@ public class LangSwitch {
 	@DefaultConfig(sharedRoot = true)
 	private ConfigurationLoader<CommentedConfigurationNode> configManager;
 	private void reload() {
+		if (!new File(".", "config/langswitch.conf").exists()) {
+			new File(".", "config").mkdirs();
+			CommentedConfigurationNode root = configManager.createEmptyNode(), node;
+			node = root.getNode("DefaultLocale");
+			node.setComment("This is the default fallback language for the server. If a translation is missing this language will be used, so make sure that the translations for this language are complete.");
+			node.setValue(Locale.getDefault().getLanguage()+"_"+Locale.getDefault().getCountry());
+
+			node = root.getNode("VerboseLogging");
+			node.setComment("Verbose logging will inform you about any missing or broken translations. It is recommended that you boot up with this enabled at least once after updates, to get a quick glimpse if everything is ok.");
+			node.setValue(true);
+			try {
+				configManager.save(root);
+			} catch (Exception e) {
+				w("Could not save the default config");
+			}
+		}
 		try {
 			ConfigurationNode root = configManager.load();
 			String locale = root.getNode("DefaultLocale").getString(Locale.getDefault().toString());
@@ -97,6 +116,8 @@ public class LangSwitch {
 			serverDefault = Locale.forLanguageTag(locale.replace('_', '-'));
 			loadLang(serverDefault);
 			unloadLangIfUnused(previous);
+
+			verbose = root.getNode("VerboseLogging").getBoolean(true);
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
@@ -129,13 +150,17 @@ public class LangSwitch {
 		Locale checkload = null;
 		for (ProfileProperty prop : props)
 			if (prop.getName().equalsIgnoreCase("language")) { 
-				playerLang.put(player.getProfile().getUniqueId(), checkload=Locale.forLanguageTag(prop.getValue().replace('_', '-')));
+				String val=prop.getValue().replace('_', '-');
+				checkload=Locale.forLanguageTag(val);
+				if (val != null && !val.isEmpty())
+					playerLang.put(player.getProfile().getUniqueId(), checkload);
 				break;
 			}
 		
 		//use geo location in the future? player.getLocale seems to stick to en_US
-		if (checkload==null)
+		if (checkload==null) {
 			playerLang.put(player.getProfile().getUniqueId(), checkload=player.getLocale());
+		}
 		
 		loadLang(checkload);
 	}
@@ -164,16 +189,16 @@ public class LangSwitch {
 		Sponge.getScheduler().createAsyncExecutor(instance).execute(new LocaleRunnable(lang) {
 			public void run() {
 				for (Entry<String, Lang> entry : plugins.entrySet()) {
-					l("Loading translations for %s in %s...", entry.getKey(), getLocale().toString());
+					if (verbose) l("Loading translations for %s in %s...", entry.getKey(), getLocale().toString());
 					if (entry.getValue().loaded.contains(getLocale())) return;
 					entry.getValue().loaded.add(getLocale()); //prevent stacking
 					
 					File to = instance.configDir.resolve(entry.getKey()).resolve("Lang").resolve(getLocale().toString()+".lang").toFile();
 					if (!to.exists()) {
-						l("No country specifig translations for "+getLocale().getDisplayLanguage()+", switching to "+getLocale().getLanguage()+".lang");
+						if (verbose) l("No country specifig translations for "+getLocale().getDisplayLanguage()+", switching to "+getLocale().getLanguage()+".lang");
 						to = new File(to.getParentFile(), getLocale().getLanguage()+".lang");
 						if (!to.exists()) {
-							l("No translation file for "+getLocale().getDisplayLanguage()+" was found!");
+							if (verbose) l("No translation file for "+getLocale().getDisplayLanguage()+" was found!");
 							continue;
 						}
 					}
@@ -218,11 +243,16 @@ public class LangSwitch {
 	}
 	
 	public static void unloadLangIfUnused(Locale lang) {
-		if (lang==null || lang.toString().equals(serverDefault.toString())) return;
+		if (lang==null) return;
+		if (lang.equals(serverDefault) ||
+			( (lang.getCountry().isEmpty() || serverDefault.getCountry().isEmpty()) &&
+				lang.getLanguage().equals(serverDefault.getLanguage())
+			)
+		   ) { return; }
 		for (Locale l : playerLang.values()) if (l.equals(lang)) return;
 		for (Lang l : plugins.values()) {
-			l("Unloading %s translations...", lang.toString());
 			l.removeTranslation(lang);
+			l.loaded.remove(lang);
 		}
 	}
 	

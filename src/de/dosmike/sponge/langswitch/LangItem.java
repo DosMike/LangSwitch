@@ -20,7 +20,7 @@ public class LangItem {
 	String get(String[] path, int location, Locale lang, Locale fallback) {
 		if (location<path.length) { //path down
 			if (!tree.containsKey(path[location])) {
-				LangSwitch.l("Missing translation %s", String.join(".", path));
+				if (LangSwitch.verbose) LangSwitch.l("Missing translation %s", String.join(".", path));
 				return String.join(".", path);
 			}
 			else return tree.get(path[location]).get(path, location+1, lang, fallback);
@@ -29,10 +29,10 @@ public class LangItem {
 		} else {//get value
 			if (!translations.containsKey(lang)) { 
 				if (!translations.containsKey(fallback)) {
-					LangSwitch.l("Missing translation %s[Default:%s]", String.join(".", path), (fallback==null?"":fallback.toString()));
+					if (LangSwitch.verbose) LangSwitch.l("Missing translation %s[Default:%s]", String.join(".", path), (fallback==null?"":fallback.toString()));
 					return String.join(".", path)+String.format("[%s]", lang.toString());
 				} else {
-					LangSwitch.l("Missing translation %s[%s]", String.join(".", path), lang.toString());
+					if (LangSwitch.verbose) LangSwitch.l("Missing translation %s[%s]", String.join(".", path), lang.toString());
 					return translations.get(fallback);
 				}
 			} else {
@@ -48,7 +48,7 @@ public class LangItem {
 	Optional<String> query(String[] path, int location, Locale lang, Locale fallback) {
 		if (location<path.length) { //path down
 			if (!tree.containsKey(path[location])) {
-				LangSwitch.l("Missing translation %s", String.join(".", path));
+				if (LangSwitch.verbose) LangSwitch.l("Missing translation %s", String.join(".", path));
 				return Optional.empty();
 			}
 			else return tree.get(path[location]).query(path, location+1, lang, fallback);
@@ -57,10 +57,10 @@ public class LangItem {
 		} else {//get value
 			if (!translations.containsKey(lang)) { 
 				if (!translations.containsKey(fallback)) {
-					LangSwitch.l("Missing translation %s[Default:%s]", String.join(".", path), (fallback==null?"":fallback.toString()));
+					if (LangSwitch.verbose) LangSwitch.l("Missing translation %s[Default:%s]", String.join(".", path), (fallback==null?"":fallback.toString()));
 					return Optional.empty();
 				} else {
-					LangSwitch.l("Missing translation %s[%s]", String.join(".", path), lang.toString());
+					if (LangSwitch.verbose) LangSwitch.l("Missing translation %s[%s]", String.join(".", path), lang.toString());
 					return Optional.of(translations.get(fallback));
 				}
 			} else {

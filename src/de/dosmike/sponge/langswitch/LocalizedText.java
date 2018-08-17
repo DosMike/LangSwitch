@@ -61,7 +61,7 @@ public class LocalizedText implements Localized<Text> {
 				}
 			}
 		}
-		if (!unusedPlaceholders.isEmpty())
+		if (!unusedPlaceholders.isEmpty() && LangSwitch.verbose)
 			LangSwitch.l("Localisation %s does not use the following placeholder: %s", path, StringUtils.join(unusedPlaceholders, ", "));
 		
 		Text.Builder result = Text.builder();
