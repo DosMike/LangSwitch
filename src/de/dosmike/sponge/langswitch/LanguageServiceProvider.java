@@ -1,9 +1,12 @@
 package de.dosmike.sponge.langswitch;
 
-import java.util.Optional;
-
 import de.dosmike.sponge.languageservice.API.LanguageService;
 import de.dosmike.sponge.languageservice.API.PluginTranslation;
+import org.spongepowered.api.command.CommandSource;
+import org.spongepowered.api.entity.living.player.Player;
+
+import java.util.Locale;
+import java.util.Optional;
 
 public class LanguageServiceProvider implements LanguageService {
 
@@ -28,6 +31,15 @@ public class LanguageServiceProvider implements LanguageService {
 		LangSwitch.plugins.put(id, newLang);
 		LangSwitch.loadLang(LangSwitch.serverDefault);
 		return newLang;
+	}
+
+	public Locale getSelectedLocale(CommandSource target) {
+		Locale l = LangSwitch.serverDefault;
+		if (target instanceof Player) {
+			l = LangSwitch.playerLang.get(((Player) target).getUniqueId());
+			if (l == null) return ((Player) target).getLocale();
+		}
+		return l;
 	}
 
 }

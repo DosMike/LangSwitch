@@ -45,7 +45,7 @@ import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 
-@Plugin(id="langswitch", name="LangSwitch", authors="DosMike", version="1.2")
+@Plugin(id="langswitch", name="LangSwitch", authors="DosMike", version="1.3")
 public class LangSwitch {
 	static LangSwitch instance;
 //	static Lang myL;
