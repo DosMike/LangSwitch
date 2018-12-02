@@ -1,9 +1,12 @@
 package de.dosmike.sponge.languageservice.API;
 
+import java.util.Locale;
 import java.util.Optional;
 
 import de.dosmike.sponge.langswitch.LocalizedString;
 import de.dosmike.sponge.langswitch.LocalizedText;
+import org.spongepowered.api.command.CommandSource;
+import org.spongepowered.api.entity.living.player.Player;
 
 /** The service interface to access translations for your plugin.
  */
@@ -28,7 +31,7 @@ public interface LanguageService {
 	/** This function returns your {@link PluginTranslation} at any point.<br>
 	 * Remember that you have to register your plugin before you're able to receive the PluginTranslation.
 	 * @param plugin your plugin instance
-	 * @returns your PluginTranslation if available
+	 * @return your PluginTranslation if available
 	  */
 	public Optional<PluginTranslation> getTranslation(Object plugin);
 
@@ -39,4 +42,11 @@ public interface LanguageService {
 	 * @return your plugin translation instance. */
 	public PluginTranslation registerTranslation(Object plugin);
 
+	/** Player can change their selected localization with the /language command.
+	 * In order to better integrate with other translation tools this will return
+	 * the player chosen, or default language
+	 * @param target the CommandSource to get the translation for
+	 * @return in order if available: player selected locale, player default locale, server default locale
+	 */
+	public Locale getSelectedLocale(CommandSource target);
 }

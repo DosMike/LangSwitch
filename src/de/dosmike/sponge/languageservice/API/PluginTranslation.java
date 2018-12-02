@@ -11,20 +11,20 @@ public interface PluginTranslation {
 	/** this method checks if a certain locale was loaded for your plugin, you might not need this.<br>
 	 * In the default implementation all plugins load the same locales at the same time
 	 * @param locale the locale to check for
-	 * @returns true if translations for this locale were loaded */
+	 * @return true if translations for this locale were loaded */
 	public boolean isLocaleLoaded(Locale locale);
 	
 	/** this method returns the default locale for your plugin, in the default locale this will be the derver default locale
 	 * reflecting the value specified in the langswitch configuration.
-	 * @returns This plugins default locale for translations */
+	 * @return This plugins default locale for translations */
 	public Locale getDefaultLocale();
 
 	/** this will try to resolve to translation path in your plugin for a certain locale or fall back to the default locale
 	 * if the locale was not found. If there is no result for the default locale as well it will return the path-string with 
 	 * the missing language in brackets.
-	 * @param the path to search for translations
+	 * @param path the path to search for translations
 	 * @param lang the locale to return
-	 * @returns the translation for lang or the default locale */
+	 * @return the translation for lang or the default locale */
 	public String get(String path, Locale lang);
 	
 	/** Returns a {@link Localized} that accepts replace parameters and has no defined language yet.

@@ -19,21 +19,25 @@ public interface Localized<X> {
 	 * <pre>translations.local("cmd.target.nothuman").replace("%entity%", entity.getType().getTranslation())</pre>
 	 * When resolving the Localized %entity% may be replaced with Pig
 	 * @param placeholder the string to be replaced
-	 * @param the value to take it's place (if not a string toString() will be called)
+	 * @param replacement the value to take it's place (if not a string toString() will be called)
 	 * @return this localized for chaining
 	 */
 	public Localized<X> replace(String placeholder, Object replacement);
 	
 	/** Retrieves the language for this CommandSender, get's the raw translation, puts in all found placeholders and returns the translated result.
+	 * @param src the command source to get translations for
 	 * @return The Localized result for this CommandSource */
 	public Optional<X> resolve(CommandSource src);
 	/** Retrieves the language for this Player, get's the raw translation, puts in all found placeholders and returns the translated result.
+	 * @param player the player to get translations for
 	 * @return The Localized result for this Player */
 	public Optional<X> resolve(Player player);
 	/** Retrieves the language for this Player, get's the raw translation, puts in all found placeholders and returns the translated result.
+	 * @param player the player to get translations for
 	 * @return The Localized result for this Player */
 	public Optional<X> resolve(GameProfile player);
 	/** Retrieves the language for this Player, get's the raw translation, puts in all found placeholders and returns the translated result.
+	 * @param playerID the player to get translations for
 	 * @return The Localized result for this Player */
 	public Optional<X> resolve(UUID playerID);
 

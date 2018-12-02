@@ -2,9 +2,9 @@
   "modid": "langswitch",
   "name": "LangSwitch",
   "description": "A localization service for SpongePowered plugins",
-  "version": "1.2",
+  "version": "1.3",
   "url": "https://github.com/DosMike/LangSwitch",
   "authorList": [ "DosMike" ],
-  "requiredMods": [ "spongeapi" ],
-  "dependencies": [ "spongeapi" ]
+  "requiredMods": [ "spongeapi@7.0.0" ],
+  "dependencies": [ "spongeapi@7.0.0" ]
 }]
