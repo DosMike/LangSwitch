@@ -15,6 +15,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.UUID;
 
+import de.dosmike.sponge.geoip.GeoIPService;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandException;
@@ -44,8 +45,9 @@ import de.dosmike.sponge.languageservice.API.LanguageService;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
+import org.spongepowered.api.text.translation.locale.Locales;
 
-@Plugin(id="langswitch", name="LangSwitch", authors="DosMike", version="1.3")
+@Plugin(id="langswitch", name="LangSwitch", authors="DosMike", version="1.4")
 public class LangSwitch {
 	static LangSwitch instance;
 //	static Lang myL;
@@ -136,6 +138,9 @@ public class LangSwitch {
 	}
 	
 	static Locale serverDefault = Locale.getDefault();
+	public static Locale getServerDefault() {
+		return serverDefault;
+	}
 	
 	@Inject
 	@ConfigDir(sharedRoot = true)
@@ -150,19 +155,30 @@ public class LangSwitch {
 		Locale checkload = null;
 		for (ProfileProperty prop : props)
 			if (prop.getName().equalsIgnoreCase("language")) { 
-				String val=prop.getValue().replace('_', '-');
-				checkload=Locale.forLanguageTag(val);
-				if (val != null && !val.isEmpty())
+				String val=prop.getValue();
+				if (val != null && !val.isEmpty()) {
+					val = val.replace('_', '-');
+					checkload=Locale.forLanguageTag(val);
 					playerLang.put(player.getProfile().getUniqueId(), checkload);
+				}
 				break;
 			}
 		
 		//use geo location in the future? player.getLocale seems to stick to en_US
-		if (checkload==null) {
-			playerLang.put(player.getProfile().getUniqueId(), checkload=player.getLocale());
-		}
-		
-		loadLang(checkload);
+		if (checkload==null)
+			GeoIPService.getProvider().getLocaleFor(player).whenCompleteAsync((ol, e)->{
+				Locale locale;
+				if (e != null) {
+					//probably a connection from localhost, not providing a ip to lookup
+					locale = getServerDefault();
+				} else {
+					locale = ol.orElse(getServerDefault());
+				}
+				playerLang.put(player.getProfile().getUniqueId(), locale);
+				loadLang(locale);
+			});
+		else
+			loadLang(checkload);
 	}
 	
 	@Listener
