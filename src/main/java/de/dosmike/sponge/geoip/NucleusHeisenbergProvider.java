@@ -1,6 +1,6 @@
 package de.dosmike.sponge.geoip;
 
-import io.github.nucleuspowered.heisenberg.relocate.com.maxmind.geoip2.record.Country;
+import com.maxmind.geoip2.record.Country;
 import io.github.nucleuspowered.nucleusheisenberg.NucleusHeisenberg;
 import org.spongepowered.api.Sponge;
 
