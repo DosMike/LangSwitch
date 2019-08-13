@@ -35,8 +35,7 @@ targetCompatibility = 1.8
 dependencies {
     compile 'org.jetbrains:annotations:16.0.2'
     compile 'org.spongepowered:spongeapi:7.2.0-SNAPSHOT'
-    compile files('../../../libs/GeoIPTools-Sponge-1.0-SNAPSHOT.jar')
-    compile files('../../../libs/Heisenberg-0.9.1-MC1.12.2.jar')
+    compile 'com.github.NucleusPowered:Heisenberg:0.9.1'
     shadow 'com.github.DosMike:SpongePluginVersionChecker:master-SNAPSHOT'
 }
 

@@ -24,12 +24,6 @@ public class GeoIPService {
             return;
         }
 
-        plugin = Sponge.getPluginManager().getPlugin("geoiptools");
-        if (plugin.isPresent()) {
-            provider = new GeoIPToolsProvider();
-            return;
-        }
-
         provider = new AbsentProvider();
 
     }
