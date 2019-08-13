@@ -1,12 +1,7 @@
 package de.dosmike.sponge.langswitch;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
 
 public class LangItem {
 	Map<String, LangItem> tree = new HashMap<>();

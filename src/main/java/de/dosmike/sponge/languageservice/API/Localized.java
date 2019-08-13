@@ -1,11 +1,11 @@
 package de.dosmike.sponge.languageservice.API;
 
-import java.util.Optional;
-import java.util.UUID;
-
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.profile.GameProfile;
+
+import java.util.Optional;
+import java.util.UUID;
 
 /** A Localized holds reference to a certain {@link PluginTranslation} at a specified translation path.<br>
  * Adding replacements will refine the result and replace placeholders in your translations as the Localized gets Resolved for a CommandSource

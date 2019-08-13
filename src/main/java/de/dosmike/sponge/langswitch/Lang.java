@@ -1,10 +1,10 @@
 package de.dosmike.sponge.langswitch;
 
+import de.dosmike.sponge.languageservice.API.PluginTranslation;
+
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
-
-import de.dosmike.sponge.languageservice.API.PluginTranslation;
 
 public class Lang extends LangItem implements PluginTranslation {
 	

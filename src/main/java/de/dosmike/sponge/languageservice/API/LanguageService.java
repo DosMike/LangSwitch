@@ -1,12 +1,11 @@
 package de.dosmike.sponge.languageservice.API;
 
-import java.util.Locale;
-import java.util.Optional;
-
 import de.dosmike.sponge.langswitch.LocalizedString;
 import de.dosmike.sponge.langswitch.LocalizedText;
 import org.spongepowered.api.command.CommandSource;
-import org.spongepowered.api.entity.living.player.Player;
+
+import java.util.Locale;
+import java.util.Optional;
 
 /** The service interface to access translations for your plugin.
  */

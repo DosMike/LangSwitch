@@ -69,6 +69,42 @@ config under `SERVER\config\langswitch.conf`. Just set the value for
 
 Example config:
 ```
-# Servers fallback locale
+# This is the default fallback language for the server.
+# If a translation is missing this language will be used,
+# so make sure that the translations for this language are complete.
 DefaultLocale=en_US
+
+# Verbose logging will inform you about any missing or
+# broken translations. It is recommended that you boot
+# up with this enabled at least once after updates,
+# to get a quick glimpse if everything is ok.
+VerboseLogging=true
+
+# It's strongly recommended to enable automatic version checking,
+# This will also inform you about changes in dependencies.
+# Set this value to true to allow this Plugin to check for Updates on Ore
+VersionChecker=false
 ```
+
+### Depending on this plugin
+
+This plugin is jitpack-compatible, if you're using gradle just add this:
+```{groovy}
+repositories {
+    ...
+    maven { url "https://jitpack.io" }
+}
+dependencies {
+    ...
+    compile 'com.github.DosMike:LangSwitch:master-SNAPSHOT'
+}
+```
+
+### External Connections
+
+**[Version Checker](https://github.com/DosMike/SpongePluginVersionChecker)**  
+This plugin uses a version checker to notify you about available updates.  
+This updater is **disabled by default** and can be enabled in `config/langswitch.conf`
+by setting the value `VersionChecker` to `true`.  
+If enabled it will asynchronously check (once per server start) if the Ore repository has any updates.  
+This will *only print update notes into the server log*, no files are being downlaoded!

@@ -2,7 +2,6 @@ package de.dosmike.sponge.geoip;
 
 import de.dosmike.sponge.langswitch.LangSwitch;
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.text.translation.locale.Locales;
 import uk.org.whoami.geoip.GeoIPTools;
 
 import java.net.Inet4Address;
