@@ -1,21 +1,12 @@
 package de.dosmike.sponge.langswitch;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.file.Path;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.UUID;
-
+import com.google.inject.Inject;
+import de.dosmike.sponge.VersionChecker;
 import de.dosmike.sponge.geoip.GeoIPService;
+import de.dosmike.sponge.languageservice.API.LanguageService;
+import ninja.leaping.configurate.ConfigurationNode;
+import ninja.leaping.configurate.commented.CommentedConfigurationNode;
+import ninja.leaping.configurate.loader.ConfigurationLoader;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandException;
@@ -32,6 +23,7 @@ import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.game.GameReloadEvent;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
+import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.plugin.PluginContainer;
@@ -39,15 +31,12 @@ import org.spongepowered.api.profile.GameProfile;
 import org.spongepowered.api.profile.property.ProfileProperty;
 import org.spongepowered.api.text.Text;
 
-import com.google.inject.Inject;
+import java.io.*;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.Map.Entry;
 
-import de.dosmike.sponge.languageservice.API.LanguageService;
-import ninja.leaping.configurate.ConfigurationNode;
-import ninja.leaping.configurate.commented.CommentedConfigurationNode;
-import ninja.leaping.configurate.loader.ConfigurationLoader;
-import org.spongepowered.api.text.translation.locale.Locales;
-
-@Plugin(id="langswitch", name="LangSwitch", authors="DosMike", version="1.4")
+@Plugin(id="langswitch", name="LangSwitch", authors="DosMike", version="1.4.1")
 public class LangSwitch {
 	static LangSwitch instance;
 //	static Lang myL;
@@ -86,6 +75,10 @@ public class LangSwitch {
 			}
 		}).build(), "language");
 	}
+	@Listener
+	public void onGameStarted(GameStartedServerEvent event) {
+		VersionChecker.checkVersion(this);
+	}
 	@Listener()
 	public void reload(GameReloadEvent event) {
 		reload();
@@ -104,6 +97,12 @@ public class LangSwitch {
 			node = root.getNode("VerboseLogging");
 			node.setComment("Verbose logging will inform you about any missing or broken translations. It is recommended that you boot up with this enabled at least once after updates, to get a quick glimpse if everything is ok.");
 			node.setValue(true);
+
+			node = root.getNode("VersionChecker");
+			node.setComment("It's strongly recommended to enable automatic version checking,\n" +
+					"This will also inform you about changes in dependencies.\n" +
+					"Set this value to true to allow this Plugin to check for Updates on Ore");
+			node.setValue(false);
 			try {
 				configManager.save(root);
 			} catch (Exception e) {
@@ -120,6 +119,11 @@ public class LangSwitch {
 			unloadLangIfUnused(previous);
 
 			verbose = root.getNode("VerboseLogging").getBoolean(true);
+
+			VersionChecker.setVersionCheckingEnabled(
+					Sponge.getPluginManager().fromInstance(this).get().getId(),
+					root.getNode("VersionChecker").getBoolean(false)
+					);
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
@@ -271,7 +275,7 @@ public class LangSwitch {
 			l.loaded.remove(lang);
 		}
 	}
-	
+
 	public static abstract class LocaleRunnable implements Runnable {
 		private Locale loc;
 		private LocaleRunnable(Locale forLocale) { loc = forLocale; }

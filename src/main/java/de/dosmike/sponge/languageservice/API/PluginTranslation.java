@@ -1,8 +1,8 @@
 package de.dosmike.sponge.languageservice.API;
 
-import java.util.Locale;
-
 import org.spongepowered.api.text.Text;
+
+import java.util.Locale;
 
 /** Interface providing translations for your Plugin.
  * You can hold the instance during as these PluginTranslations are only generated once. */
