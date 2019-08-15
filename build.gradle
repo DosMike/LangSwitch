@@ -33,9 +33,9 @@ targetCompatibility = 1.8
 
 
 dependencies {
-    compile 'org.jetbrains:annotations:16.0.2'
-    compile 'org.spongepowered:spongeapi:7.2.0-SNAPSHOT'
-    compile 'com.github.NucleusPowered:Heisenberg:0.9.1'
+    compileOnly 'org.jetbrains:annotations:16.0.2'
+    compileOnly 'org.spongepowered:spongeapi:7.2.0-SNAPSHOT'
+    compileOnly 'com.github.NucleusPowered:Heisenberg:0.9.1'
     shadow 'com.github.DosMike:SpongePluginVersionChecker:master-SNAPSHOT'
 }
 
