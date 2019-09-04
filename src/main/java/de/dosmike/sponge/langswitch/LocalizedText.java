@@ -54,18 +54,19 @@ public class LocalizedText implements Localized<Text> {
 		}
 		if (!unusedPlaceholders.isEmpty() && LangSwitch.verbose)
 			LangSwitch.l("Localisation %s does not use the following placeholder: %s", path, StringUtils.join(unusedPlaceholders, ", "));
-		
-		Text.Builder result = Text.builder();
-		for (Object o : elements) 
-			if (o instanceof Text) 
-				result.append((Text)o); 
-			//not deserializing legacy code is the only thing that let's them work in this case, since they need to apply for the rest of the result
-//			else if (o instanceof String)
-//				result.append( TextSerializers.FORMATTING_CODE.deserializeUnchecked((String)o) ); 
-//				result.append( TextSerializers.LEGACY_FORMATTING_CODE.deserializeUnchecked((String)o) );
-			else 
-				result.append(Text.of(o));
-		return result.build();
+
+//		Text.Builder result = Text.builder();
+//		for (Object o : elements)
+//			if (o instanceof Text)
+//				result.append((Text)o);
+//			//not deserializing legacy code is the only thing that let's them work in this case, since they need to apply for the rest of the result
+////			else if (o instanceof String)
+////				result.append( TextSerializers.FORMATTING_CODE.deserializeUnchecked((String)o) );
+////				result.append( TextSerializers.LEGACY_FORMATTING_CODE.deserializeUnchecked((String)o) );
+//			else
+//				result.append(Text.of(o));
+//		return result.build();
+		return Text.of(elements.toArray(new Object[0]));
 	}
 	
 	LocalizedText(String path) {
