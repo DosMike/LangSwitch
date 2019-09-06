@@ -78,6 +78,12 @@ public class LangSwitch {
 	@Listener
 	public void onGameStarted(GameStartedServerEvent event) {
 		VersionChecker.checkVersion(this);
+
+		//unit tests are kind of not really possible with
+        //the server environment, so if you want to run the
+        //tests, you'll have to compile with this line not
+        //commented. Sorry for the inconvenience
+//		de.dosmike.sponge.spannable.Test.test();
 	}
 	@Listener()
 	public void reload(GameReloadEvent event) {
