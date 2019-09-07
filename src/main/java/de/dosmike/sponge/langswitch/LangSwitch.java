@@ -36,7 +36,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.Map.Entry;
 
-@Plugin(id="langswitch", name="LangSwitch", authors="DosMike", version="1.4.1")
+@Plugin(id="langswitch", name="LangSwitch", authors="DosMike", version="1.5")
 public class LangSwitch {
 	static LangSwitch instance;
 //	static Lang myL;
@@ -78,10 +78,19 @@ public class LangSwitch {
 	@Listener
 	public void onGameStarted(GameStartedServerEvent event) {
 		VersionChecker.checkVersion(this);
+
+		//unit tests are kind of not really possible with
+        //the server environment, so if you want to run the
+        //tests, you'll have to compile with this line not
+        //commented. Sorry for the inconvenience
+//		de.dosmike.sponge.spannable.Test.test();
 	}
 	@Listener()
 	public void reload(GameReloadEvent event) {
-		reload();
+        l("Reloading config...");
+        reload();
+        l("Reloading translation files...");
+		forceReloadTranslations();
 	}
 	@Inject
 	@DefaultConfig(sharedRoot = true)
@@ -168,7 +177,6 @@ public class LangSwitch {
 				break;
 			}
 		
-		//use geo location in the future? player.getLocale seems to stick to en_US
 		if (checkload==null)
 			GeoIPService.getProvider().getLocaleFor(player).whenCompleteAsync((ol, e)->{
 				Locale locale;
@@ -281,4 +289,18 @@ public class LangSwitch {
 		private LocaleRunnable(Locale forLocale) { loc = forLocale; }
 		Locale getLocale() { return loc; }
 	}
+
+	public static void forceReloadTranslations() {
+        Set<Locale> allLoaded = new HashSet<>(playerLang.values());
+        allLoaded.add(serverDefault);
+        for (Lang lang : plugins.values()) {
+            for (Locale locale : allLoaded) {
+                lang.removeTranslation(locale);
+                lang.loaded.remove(locale);
+            }
+        }
+        for (Locale locale : allLoaded) {
+            loadLang(locale);
+        }
+    }
 }

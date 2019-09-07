@@ -1,6 +1,7 @@
 package de.dosmike.sponge.langswitch;
 
 import de.dosmike.sponge.languageservice.API.Localized;
+import de.dosmike.sponge.spannable.Spannable;
 import org.apache.commons.lang3.StringUtils;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.entity.living.player.Player;
@@ -22,50 +23,76 @@ public class LocalizedText implements Localized<Text> {
 		return this;
 	}
 	
+//	private Text replace(String string) {
+//		if (lang==null)return Text.of(path);
+//		List<Object> elements = new LinkedList<>();
+//		Set<String> unusedPlaceholders = new HashSet<>();
+//		unusedPlaceholders.addAll(replacements.keySet()); //for translators
+//		elements.add(string);
+//		boolean round=true;
+//		while (round) {
+//			round=false;
+//			i: for (int i=0; i<elements.size(); i++) {
+//				if (elements.get(i) instanceof String) {
+//					String val = (String)elements.get(i);
+//					for (Entry<String, Object> e : replacements.entrySet()) {
+//						int pos=val.indexOf(e.getKey());
+//						if (pos>=0) { round=true;
+//							unusedPlaceholders.remove(e.getKey());
+//
+//							if (pos+e.getKey().length()<val.length())
+//								elements.add(i+1, val.substring(pos+e.getKey().length()));
+//							elements.add(i+1, e.getValue());
+//							if (pos>0)
+//								elements.add(i+1, val.substring(0, pos));
+//							elements.remove(i);
+//
+//							break i;
+//						}
+//					}
+//				}
+//			}
+//		}
+//		if (!unusedPlaceholders.isEmpty() && LangSwitch.verbose)
+//			LangSwitch.l("Localisation %s does not use the following placeholder: %s", path, StringUtils.join(unusedPlaceholders, ", "));
+//
+////		Text.Builder result = Text.builder();
+////		for (Object o : elements)
+////			if (o instanceof Text)
+////				result.append((Text)o);
+////			//not deserializing legacy code is the only thing that let's them work in this case, since they need to apply for the rest of the result
+//////			else if (o instanceof String)
+//////				result.append( TextSerializers.FORMATTING_CODE.deserializeUnchecked((String)o) );
+//////				result.append( TextSerializers.LEGACY_FORMATTING_CODE.deserializeUnchecked((String)o) );
+////			else
+////				result.append(Text.of(o));
+////		return result.build();
+//		return Text.of(elements.toArray(new Object[0]));
+//	}
+
+	/**
+	 * Takes the raw translation string, inserts registered replacements
+	 * and returns the result as text
+	 */
 	private Text replace(String string) {
-		if (lang==null)return Text.of(path);
-		List<Object> elements = new LinkedList<>();
-		Set<String> unusedPlaceholders = new HashSet<>();
-		unusedPlaceholders.addAll(replacements.keySet()); //for translators
-		elements.add(string);
-		boolean round=true;
-		while (round) {
-			round=false;
-			i: for (int i=0; i<elements.size(); i++) {
-				if (elements.get(i) instanceof String) {
-					String val = (String)elements.get(i);
-					for (Entry<String, Object> e : replacements.entrySet()) {
-						int pos=val.indexOf(e.getKey()); 
-						if (pos>=0) { round=true;
-							unusedPlaceholders.remove(e.getKey());
-							
-							if (pos+e.getKey().length()<val.length())
-								elements.add(i+1, val.substring(pos+e.getKey().length()));
-							elements.add(i+1, e.getValue());
-							if (pos>0)
-								elements.add(i+1, val.substring(0, pos));
-							elements.remove(i);
-							
-							break i;
-						}
-					}
+		Spannable raw = Spannable.from(string);
+		Set<String> unusedPlaceholders = new HashSet<>(replacements.keySet());
+		for (Entry<String, Object> entry : replacements.entrySet()) {
+			Text replacement;
+			if (raw.toString().contains(entry.getKey())) {
+				unusedPlaceholders.remove(entry.getKey()); //placeholder is used
+
+				if (entry.getValue() instanceof Text) {
+					replacement = (Text) entry.getValue();
+				} else {
+					replacement = Text.of(entry.getValue());
 				}
+				raw = raw.replace(entry.getKey(), replacement);
 			}
 		}
 		if (!unusedPlaceholders.isEmpty() && LangSwitch.verbose)
 			LangSwitch.l("Localisation %s does not use the following placeholder: %s", path, StringUtils.join(unusedPlaceholders, ", "));
-		
-		Text.Builder result = Text.builder();
-		for (Object o : elements) 
-			if (o instanceof Text) 
-				result.append((Text)o); 
-			//not deserializing legacy code is the only thing that let's them work in this case, since they need to apply for the rest of the result
-//			else if (o instanceof String)
-//				result.append( TextSerializers.FORMATTING_CODE.deserializeUnchecked((String)o) ); 
-//				result.append( TextSerializers.LEGACY_FORMATTING_CODE.deserializeUnchecked((String)o) );
-			else 
-				result.append(Text.of(o));
-		return result.build();
+		return raw.toText();
 	}
 	
 	LocalizedText(String path) {
