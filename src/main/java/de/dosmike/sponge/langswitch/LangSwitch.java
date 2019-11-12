@@ -36,7 +36,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.Map.Entry;
 
-@Plugin(id="langswitch", name="LangSwitch", authors="DosMike", version="1.5")
+@Plugin(id="langswitch", name="LangSwitch", authors="DosMike", version="1.6")
 public class LangSwitch {
 	static LangSwitch instance;
 //	static Lang myL;

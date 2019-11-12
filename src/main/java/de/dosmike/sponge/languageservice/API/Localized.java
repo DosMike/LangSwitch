@@ -4,6 +4,7 @@ import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.profile.GameProfile;
 
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -40,5 +41,45 @@ public interface Localized<X> {
 	 * @param playerID the player to get translations for
 	 * @return The Localized result for this Player */
 	public Optional<X> resolve(UUID playerID);
+	/** Get's the raw translation for a specified language, puts in all found placeholders and returns the translated result.
+	 * @param locale the language to try and resolve this for
+	 * @return The Localized result for this Player */
+	public Optional<X> resolve(Locale locale);
+
+	/** Works the same as resolve, but in case no translation was found this function
+     * tries to use the path as template for replacements. This is great for messages supplied
+     * by configs where you can't know if a path was specified or the config contains the text
+     * directly, maybe because the server only cares about one language.
+	 * @param src the command source to get translations for
+	 * @return The Localized result for this CommandSource */
+	public X orLiteral(CommandSource src);
+	/** Works the same as resolve, but in case no translation was found this function
+     * tries to use the path as template for replacements. This is great for messages supplied
+     * by configs where you can't know if a path was specified or the config contains the text
+     * directly, maybe because the server only cares about one language.
+	 * @param player the player to get translations for
+	 * @return The Localized result for this Player */
+	public X orLiteral(Player player);
+	/** Works the same as resolve, but in case no translation was found this function
+     * tries to use the path as template for replacements. This is great for messages supplied
+     * by configs where you can't know if a path was specified or the config contains the text
+     * directly, maybe because the server only cares about one language.
+	 * @param player the player to get translations for
+	 * @return The Localized result for this Player */
+	public X orLiteral(GameProfile player);
+	/** Works the same as resolve, but in case no translation was found this function
+     * tries to use the path as template for replacements. This is great for messages supplied
+     * by configs where you can't know if a path was specified or the config contains the text
+     * directly, maybe because the server only cares about one language.
+	 * @param playerID the player to get translations for
+	 * @return The Localized result for this Player */
+	public X orLiteral(UUID playerID);
+	/** Works the same as resolve, but in case no translation was found this function
+     * tries to use the path as template for replacements. This is great for messages supplied
+     * by configs where you can't know if a path was specified or the config contains the text
+     * directly, maybe because the server only cares about one language.
+	 * @param locale the language to try and resolve this for
+	 * @return The Localized result for this Player */
+	public X orLiteral(Locale locale);
 
 }
