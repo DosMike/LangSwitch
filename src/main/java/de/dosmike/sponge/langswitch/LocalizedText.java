@@ -28,7 +28,7 @@ public class LocalizedText implements Localized<Text> {
 	 * Takes the raw translation string, inserts registered replacements
 	 * and returns the result as text
 	 */
-	private Text replace(String string) {
+	private Text getLocal(String string, Locale locale) {
 		Spannable raw = Spannable.from(string);
 		Set<String> unusedPlaceholders = new HashSet<>(replacements.keySet());
 		for (Entry<String, Object> entry : replacements.entrySet()) {
@@ -36,7 +36,10 @@ public class LocalizedText implements Localized<Text> {
 			if (raw.toString().contains(entry.getKey())) {
 				unusedPlaceholders.remove(entry.getKey()); //placeholder is used
 
-				if (entry.getValue() instanceof Text) {
+				if (entry.getValue() instanceof Localized) {
+					Object loc = ((Localized) entry.getValue()).orLiteral(locale);
+					replacement = (loc instanceof Text) ? (Text)loc : Text.of(loc);
+				} else if (entry.getValue() instanceof Text) {
 					replacement = (Text) entry.getValue();
 				} else {
 					replacement = Text.of(entry.getValue());
@@ -62,7 +65,7 @@ public class LocalizedText implements Localized<Text> {
 		if (lang==null)return Optional.empty();
 		if (src instanceof Player) return resolve((Player)src);
 		Optional<String> optional = lang.query(path, lang.def, null);
-        return optional.map(this::replace);
+        return optional.map(s->getLocal(s,lang.def));
     }
     @Override
     public Optional<Text> resolve(Player player) {
@@ -81,15 +84,15 @@ public class LocalizedText implements Localized<Text> {
     @Override
     public Optional<Text> resolve(Locale language) {
 		Optional<String> optional = lang.query(path, language, lang.def);
-        return optional.map(this::replace);
+        return optional.map(s->getLocal(s,language));
     }
 
     @Override
     public Text orLiteral(CommandSource src) {
-        if (lang==null) return replace(path);
+        if (lang==null) return getLocal(path, null);
         if (src instanceof Player) return orLiteral((Player)src);
         String template = lang.query(path, lang.def, null).orElse(path);
-        return replace(template);
+        return getLocal(template, lang.def);
     }
     @Override
     public Text orLiteral(Player player) {
@@ -101,22 +104,25 @@ public class LocalizedText implements Localized<Text> {
     }
     @Override
     public Text orLiteral(UUID playerID) {
-        if (lang==null) return replace(path);
+        if (lang==null) return getLocal(path, null);
         return orLiteral(LangSwitch.playerLang.get(playerID));
     }
     @Override
     public Text orLiteral(Locale locale) {
-        return replace(lang.query(path, locale, lang.def).orElse(path));
+		if (lang==null) return getLocal(path, null);
+        return getLocal(lang.query(path, locale, lang.def).orElse(path), locale);
     }
 
     /** tries to get the default translation or returns the path if not found */
 	@Override
 	public String toString() {
+		if (lang==null) return getLocal(path, null).toPlain();
 		String result = lang.get(path, lang.def, null);
-		return replace(result).toPlain();
+		return getLocal(result, null).toPlain();
 	}
 	public Text toText() {
+		if (lang==null) return getLocal(path, null);
 		String result = lang.get(path, lang.def, null);
-		return replace(result);
+		return getLocal(result, lang.def);
 	}
 }
