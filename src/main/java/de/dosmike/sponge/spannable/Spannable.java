@@ -164,8 +164,8 @@ public class Spannable implements CharSequence {
      * predicate you can instance check for types of Spans
      * and get more information about the span after casting it
      * to the type.
-     * <pre>.removeSpansIf(span->
-     *     ((span instanceof ColorSpan) &&
+     * <pre>.removeSpansIf(span-&gt;
+     *     ((span instanceof ColorSpan) &amp;&amp;
      *     !((ColorSpan)span).getColor().equals(TextColors.YELLOW)) )</pre>
      * All span manipulations work with side-effects.
      * @param removeCondition test that returns whether a span has to be removed
@@ -963,7 +963,7 @@ public class Spannable implements CharSequence {
     }
 
     /**
-     * Serializes this Spannable with the default format code '&'.
+     * Serializes this Spannable with the default format code '&amp;'.
      * The result should be visually identical to serializing #toText()
      * @see org.spongepowered.api.text.serializer.TextSerializers#FORMATTING_CODE
      * @see #toSerialized(char)
@@ -1162,8 +1162,8 @@ public class Spannable implements CharSequence {
         return new Spannable(plain.toString(), spans);
     }
     /**
-     * Parse a String as serialized string with the ampersand (&) as formatting char.
-     * This should have the same effect as using @link{TextSerializers#FORMATTING_CODE}.<br>
+     * Parse a String as serialized string with the ampersand (&amp;) as formatting char.
+     * This should have the same effect as using {@link TextSerializers#FORMATTING_CODE}.<br>
      * Note that the Minecraft internal formatting character § (section sign) is always parsed
      * as well.
      * @param serialized the serial representation of a formatted text
@@ -1176,7 +1176,7 @@ public class Spannable implements CharSequence {
 
     /**
      * Parse a String as serialized string with alternative formatting char.
-     * This should have the same effect as using @link{TextSerializers#FORMATTING_CODE}.<br>
+     * This should have the same effect as using {@link TextSerializers#FORMATTING_CODE}.<br>
      * Note that the Minecraft internal formatting character § (section sign) is always parsed
      * as well.
      * @param serialized the serial representation of a formatted text
