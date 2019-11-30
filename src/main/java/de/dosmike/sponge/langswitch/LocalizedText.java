@@ -131,9 +131,11 @@ public class LocalizedText implements Localized<Text> {
      * and reapply "unstyled" styles that match the overall style of the
      * Text. The defaults are RESET style / color.
 	 * @param contextColor the color to reset to between spans
+	 * @return self for chaining
 	 */
-    public void setContextColor(TextColor contextColor) {
+    public LocalizedText setContextColor(TextColor contextColor) {
 		this.contextColor = contextColor;
+		return this;
 	}
 	/**
 	 * Text actually sucks hard and TextColor.NONE / TextStyle.NONE
@@ -144,9 +146,11 @@ public class LocalizedText implements Localized<Text> {
 	 * and reapply "unstyled" styles that match the overall style of the
 	 * Text. The defaults are RESET style / color.
 	 * @param contextStyle the style to reset to between spans
+	 * @return self for chaining
 	 */
-	public void setContextStyle(TextStyle contextStyle) {
+	public LocalizedText setContextStyle(TextStyle contextStyle) {
 		this.contextStyle = contextStyle;
+		return this;
 	}
 	/**
 	 * Text actually sucks hard and TextColor.NONE / TextStyle.NONE
@@ -158,10 +162,12 @@ public class LocalizedText implements Localized<Text> {
 	 * Text. The defaults are RESET style / color.
 	 * @param contextColor the color to reset to between spans
 	 * @param contextStyle the style to reset to between spans
+	 * @return self for chaining
 	 */
-	public void setContextFormat(TextColor contextColor, TextStyle contextStyle) {
+	public LocalizedText setContextFormat(TextColor contextColor, TextStyle contextStyle) {
 		this.contextColor = contextColor;
 		this.contextStyle = contextStyle;
+		return this;
 	}
 	/**
 	 * Text actually sucks hard and TextColor.NONE / TextStyle.NONE
@@ -172,10 +178,12 @@ public class LocalizedText implements Localized<Text> {
 	 * and reapply "unstyled" styles that match the overall style of the
 	 * Text. The defaults are RESET style / color.
 	 * @param formattedText flat text object formatted with the style / color to reset to between spans
+	 * @return self for chaining
 	 */
-	public void setContextFormat(Text formattedText) {
+	public LocalizedText setContextFormat(Text formattedText) {
 		contextColor = formattedText.getColor();
 		contextStyle = formattedText.getStyle();
+		return this;
 	}
 
     /** tries to get the default translation or returns the path if not found */
