@@ -1,9 +1,7 @@
 package de.dosmike.sponge.spannable;
 
-import de.dosmike.sponge.langswitch.LangSwitch;
 import org.intellij.lang.annotations.RegExp;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.api.Sponge;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColor;
 import org.spongepowered.api.text.format.TextColors;
@@ -890,7 +888,7 @@ public class Spannable implements CharSequence {
                 if (!colors.isEmpty()) {
                     colors.getLast().apply(builder);
                 } else {
-                    TextColors.NONE.applyTo(builder);
+                    resetColor.applyTo(builder);
                 }
                 if (!style.isEmpty()) {
                     //all active styles need to be applied
@@ -899,17 +897,17 @@ public class Spannable implements CharSequence {
                             .distinct()
                             .toArray(TextStyle[]::new)));
                 } else {
-                    TextStyles.NONE.applyTo(builder);
+                    resetStyle.applyTo(builder);
                 }
                 if (!actClick.isEmpty()) actClick.getLast().apply(builder);
                 if (!actShiftClick.isEmpty()) actClick.getLast().apply(builder);
                 if (!actHover.isEmpty()) actHover.getLast().apply(builder);
                 resultBuilder.append(builder.build());
             }
-            //styles and colors are messy:
-            // remove all styles, re-add default styles to prevent bleeding
-            // the next segment will add those again if needed
-            resultBuilder.append(Text.of(TextStyles.RESET, resetColor, resetStyle));
+//            //styles and colors are messy:
+//            // remove all styles, re-add default styles to prevent bleeding
+//            // the next segment will add those again if needed
+//            resultBuilder.append(Text.of(TextStyles.RESET, resetColor, resetStyle));
 
             previous = i;
             //update span stack for next segment
