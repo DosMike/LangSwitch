@@ -8,8 +8,12 @@ import java.util.Objects;
 public abstract class ActionSpan<E extends TextAction> implements Span {
 
     protected int start;
-    protected int end;
+    protected int end; //intern excluded (end-start) == length requires end exclusive
     protected E action;
+    /**
+     * @param from inclusive start index
+     * @param to exclusive end index
+     */
     public ActionSpan(int from, int to, E action) {
         if (to < from) throw new IllegalArgumentException("Length is negative");
         if (action == null) throw new IllegalArgumentException("Action can't be null");

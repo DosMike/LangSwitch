@@ -92,7 +92,7 @@ public class LocalizedString implements Localized<String> {
     public String orLiteral(CommandSource src) {
         if (lang==null) return getLocal(path, null);
         if (src instanceof Player) return orLiteral((Player)src);
-        String template = lang.query(path, lang.def, null).orElse(path);
+        String template = lang.query(path, lang.def, null, true).orElse(path);
         return getLocal(template, lang.def);
     }
     @Override
@@ -111,7 +111,7 @@ public class LocalizedString implements Localized<String> {
     @Override
     public String orLiteral(Locale locale) {
 		if (lang==null) return getLocal(path, null);
-        String template = lang.query(path, locale, lang.def).orElse(path);
+        String template = lang.query(path, locale, lang.def, true).orElse(path);
         return getLocal(template, locale);
     }
 
