@@ -3,6 +3,7 @@ package de.dosmike.sponge.spannable;
 import org.intellij.lang.annotations.RegExp;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.format.TextColor;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.text.format.TextStyle;
 import org.spongepowered.api.text.format.TextStyles;
@@ -79,7 +80,8 @@ public class Spannable implements CharSequence {
      */
     private Spannable(Spannable spannable) {
         this.plain = spannable.plain;
-        for (Span s : spannable.spans) spans.add(s.copy());
+        for (Span s : spannable.spans)
+            this.spans.add(s.copy());
     }
 
     /**
@@ -278,43 +280,73 @@ public class Spannable implements CharSequence {
         if (removeCount < 0) throw new IllegalArgumentException("removeCount can't be negative");
         if (removeCount > 0) {
             int lastExclusive = offset + removeCount;
-            cpy.plain = lastExclusive < plain.length()
-                    ? plain.substring(0, offset)+plain.substring(lastExclusive)
-                    : plain.substring(0, offset);
-            cpy.spans.removeIf(s->s.containedWithin(offset, lastExclusive));
+            int insertCount = insert != null ? insert.length() : 0;
+            int growthCount = insertCount-removeCount;
+            cpy.plain = plain.substring(0, offset);
+            if ( insertCount > 0 )
+                cpy.plain += insert;
+            if ( lastExclusive < plain.length() )
+                cpy.plain += plain.substring(lastExclusive);
+
+            //removed area wraps well around span, removing it in the process
+            // since we can't really resize them
+            cpy.spans.removeIf(s->s.containedWithin(offset, lastExclusive) && !s.isRange(offset, lastExclusive));
+            //resize existing spans
             for (Span s : cpy.spans) {
-                if (s.endsWithin(offset, lastExclusive)) {
-                    s.setEnd(offset-1);
-                } else if (s.startsWithin(offset, lastExclusive)) {
-                    s.move(-removeCount); //will fix last index
+                //span is wrapped around the removed area (borders inclusive)
+                if (s.containsRange(offset, lastExclusive-1)) {
+                    s.expand(growthCount);
+                }
+                //span is right of removed range
+                else if (s.start() >= lastExclusive) {
+                    s.move(growthCount);
+                }
+                //span starts within removed range, pokes out right
+                else if (s.startsWithin(offset, lastExclusive)) {
+                    s.move(growthCount); //move end index without .set(.get())
+                    //move start to out of removed range
+                    // since the change is from [offset lastExclusive[ to []
+                    // the new "end exclusive" is offset+1
                     s.setStart(lastExclusive);
-                } else if (s.containsRange(offset, lastExclusive)) {
-                    s.shrink(removeCount);
-                } else if (s.start() >= lastExclusive) { //span is right of range
-                    s.move(-removeCount);
+                }
+                //span starts left of removed range, ends within
+                else if (s.endsWithin(offset, lastExclusive-1)) {
+                    s.setEnd(offset-1);
                 }
             }
-        }
-        if (insert != null && insert.length()>0) {
-            cpy.plain = cpy.plain.substring(0, offset) +
-                    insert +
-                    cpy.plain.substring(offset);
-            for (Span s : cpy.spans) {
-                if (s.endsWithin(offset, offset)) {
-                    s.expand(insert.length());
-                } else if (s.start()>=offset) {
-                    s.move(insert.length());
-                }
-            }
+            //insert new spans if insert is spannable
             if (insert instanceof Spannable) {
-                Spannable sins = (Spannable)insert;
+                Spannable sins = (Spannable) insert;
                 for (Span s : sins.spans) {
                     Span copy = s.copy();
                     copy.move(offset);
-                    spans.add(copy);
+                    cpy.spans.add(copy);
+                }
+            }
+        } else { //don't remove stuff
+            if (insert != null && insert.length() > 0) {
+                cpy.plain = cpy.plain.substring(0, offset) + insert;
+                if (offset < plain.length())
+                    cpy.plain += cpy.plain.substring(offset);
+                for (Span s : cpy.spans) {
+                    if (s.start() > offset) {
+                        s.move(insert.length());
+                    }
+                    if (s.endsWithin(offset - 1, offset)) {
+                        s.expand(insert.length());
+                    }
+                }
+                if (insert instanceof Spannable) {
+                    Spannable sins = (Spannable) insert;
+                    for (Span s : sins.spans) {
+                        Span copy = s.copy();
+                        copy.move(offset);
+                        cpy.spans.add(copy);
+                    }
                 }
             }
         }
+        cpy.spans.removeIf(span->span.length()<1);
         return cpy;
     }
 
@@ -781,12 +813,52 @@ public class Spannable implements CharSequence {
     }
 
     /**
+     * Text actually sucks hard and TextColor.NONE / TextStyle.NONE
+     * do not END styles / colors but actually literally do not contain
+     * styles / colors. For spannable to text conversion it is important
+     * for me to revert styles after a span, but since i can not cleanly
+     * terminate single styles / colors i have to perform a full RESET
+     * and reapply "unstyled" styles that match the overall style of the
+     * Text. The default toText() will use RESET style / color.<br>
      * Converts this spannable into a Text representation. The
      * Text object will maintain all formatting and actions spanned
      * over this sequence.
      * @return the Text representation
      */
     public Text toText() {
+        return toText(TextColors.RESET, TextStyles.RESET);
+    }
+    /**
+     * Text actually sucks hard and TextColor.NONE / TextStyle.NONE
+     * do not END styles / colors but actually literally do not contain
+     * styles / colors. For spannable to text conversion it is important
+     * for me to revert styles after a span, but since i can not cleanly
+     * terminate single styles / colors i have to perform a full RESET
+     * and reapply "unstyled" styles that match the overall style of the
+     * Text. The default toText() will use RESET style / color.<br>
+     * Converts this spannable into a Text representation. The
+     * Text object will maintain all formatting and actions spanned
+     * over this sequence.
+     * @param resetStyled expects a flat Text object with context style / color
+     * @return the Text representation
+     */
+    public Text toText(Text resetStyled) {
+        return toText(resetStyled.getColor(), resetStyled.getStyle());
+    }
+    /**
+     * Text actually sucks hard and TextColor.NONE / TextStyle.NONE
+     * do not END styles / colors but actually literally do not contain
+     * styles / colors. For spannable to text conversion it is important
+     * for me to revert styles after a span, but since i can not cleanly
+     * terminate single styles / colors i have to perform a full RESET
+     * and reapply "unstyled" styles that match the overall style of the
+     * Text. The default toText() will use RESET style / color.<br>
+     * Converts this spannable into a Text representation. The
+     * Text object will maintain all formatting and actions spanned
+     * over this sequence.
+     * @return the Text representation
+     */
+    public Text toText(TextColor resetColor, TextStyle resetStyle) {
         //collect points of interest, where formats might change
         SortedSet<Integer> pois = new TreeSet<>(Comparator.naturalOrder());
         for (Span s : spans) {
@@ -803,8 +875,8 @@ public class Spannable implements CharSequence {
         LinkedList<ShiftClickActionSpan> actShiftClick = new LinkedList<>();
         LinkedList<HoverActionSpan> actHover = new LinkedList<>();
         Text.Builder resultBuilder = Text.builder();
-        resultBuilder.style( TextStyles.NONE );
-        resultBuilder.color( TextColors.NONE );
+        resultBuilder.style( resetStyle );
+        resultBuilder.color( resetColor );
 
         //traverse points of interes
         int previous=0;
@@ -815,6 +887,8 @@ public class Spannable implements CharSequence {
                 Text.Builder builder = Text.builder(plain.substring(previous, i));
                 if (!colors.isEmpty()) {
                     colors.getLast().apply(builder);
+                } else {
+                    resetColor.applyTo(builder);
                 }
                 if (!style.isEmpty()) {
                     //all active styles need to be applied
@@ -822,12 +896,19 @@ public class Spannable implements CharSequence {
                             .map(StyleSpan::getStyle)
                             .distinct()
                             .toArray(TextStyle[]::new)));
+                } else {
+                    resetStyle.applyTo(builder);
                 }
                 if (!actClick.isEmpty()) actClick.getLast().apply(builder);
                 if (!actShiftClick.isEmpty()) actClick.getLast().apply(builder);
                 if (!actHover.isEmpty()) actHover.getLast().apply(builder);
                 resultBuilder.append(builder.build());
             }
+//            //styles and colors are messy:
+//            // remove all styles, re-add default styles to prevent bleeding
+//            // the next segment will add those again if needed
+//            resultBuilder.append(Text.of(TextStyles.RESET, resetColor, resetStyle));
+
             previous = i;
             //update span stack for next segment
             Collection<Span> spans = getSpansAt(i);
@@ -1026,7 +1107,8 @@ public class Spannable implements CharSequence {
     }
 
     /**
-     * Wraps a char sequence like a string in a new Spannable
+     * Wraps a char sequence like a string in a new Spannable.
+     * If the char sequence uses internal formatting char those will automatically be wrapped
      * @param sequence the character sequence to wrap
      * @return the sequence as Spannable
      */
@@ -1034,7 +1116,8 @@ public class Spannable implements CharSequence {
         if (sequence instanceof Spannable) {
             return new Spannable((Spannable) sequence);
         } else {
-            return new Spannable(sequence.toString(), new HashSet<>());
+            return parseSerialized(sequence.toString(), '\u00a7');
+            //return new Spannable(sequence.toString(), new HashSet<>());
         }
     }
     /**
@@ -1044,29 +1127,37 @@ public class Spannable implements CharSequence {
      * @return new Spannable representation of the text
      */
     public static Spannable from(Text text) {
+//        Sponge.getServer().getConsole().sendMessage(Text.of("Parsing Spannable from: ", text));
         int offset = 0;
-        Spannable result = null;
         StringBuilder plain = new StringBuilder();
         Set<Span> spans = new HashSet<>();
         for (Text element : text.withChildren()) {
+//            Text.Builder part = Text.builder();
+//            part.append(Text.of("  Part ", element.toPlainSingle(), " (c ", element.getChildren().size(), ")"));
             plain.append(element.toPlainSingle());
             int length = element.toPlainSingle().length();
             if (formats.containsKey(element.getColor())) {
                 spans.add(new ColorSpan(offset, offset+length, element.getColor()));
+//                part.append(Text.of(" color "+element.getColor().toString()));
             }
             if (formats.containsKey(element.getStyle())) {
                 spans.add(new StyleSpan(offset, offset+length, element.getStyle()));
+//                part.append(Text.of(" style "+element.getStyle().toString()));
             }
             if (element.getClickAction().isPresent()) {
                 spans.add(new ClickActionSpan(offset, offset+length, element.getClickAction().get()));
+//                part.append(Text.of(" click action"));
             }
             if (element.getHoverAction().isPresent()) {
                 spans.add(new HoverActionSpan(offset, offset+length, element.getHoverAction().get()));
+//                part.append(Text.of(" hover action"));
             }
             if (element.getShiftClickAction().isPresent()) {
                 spans.add(new ShiftClickActionSpan(offset, offset+length, element.getShiftClickAction().get()));
+//                part.append(Text.of(" shift-click action"));
             }
             offset += length;
+//            Sponge.getServer().getConsole().sendMessage(part.build());
         }
         return new Spannable(plain.toString(), spans);
     }
@@ -1093,7 +1184,8 @@ public class Spannable implements CharSequence {
      * @see TextSerializers#formattingCode(char)
      */
     public static Spannable parseSerialized(String serialized, char escapeCharacter) {
-        return from(TextSerializers.formattingCode(escapeCharacter).deserialize(serialized.replace('\u00A7', escapeCharacter)));
+        String preplaced = escapeCharacter == '\u00a7' ? serialized : serialized.replace('\u00A7', escapeCharacter);
+        return from(TextSerializers.formattingCode(escapeCharacter).deserialize(preplaced));
     }
 
     @Override

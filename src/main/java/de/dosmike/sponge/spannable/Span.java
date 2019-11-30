@@ -9,7 +9,7 @@ public interface Span {
      */
     int start();
     /**
-     * @return the last inclusive character this element spans
+     * @return the last exclusive character this element spans
      */
     int end();
     /**
@@ -104,6 +104,15 @@ public interface Span {
      */
     default boolean containsRange(int left, int right) {
         return start() <= left && right <= end();
+    }
+    /**
+     * Check if this span is starting and ending at the specified indices.
+     * @param left the first position (inclusive)
+     * @param right the last position (inclusive)
+     * @return true if this span contains the range
+     */
+    default boolean isRange(int left, int right) {
+        return start() == left && right == end();
     }
 
 }

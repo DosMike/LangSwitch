@@ -7,82 +7,47 @@ import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.profile.GameProfile;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.format.TextColor;
+import org.spongepowered.api.text.format.TextColors;
+import org.spongepowered.api.text.format.TextStyle;
+import org.spongepowered.api.text.format.TextStyles;
 
 import java.util.*;
 import java.util.Map.Entry;
 
 public class LocalizedText implements Localized<Text> {
-	Lang lang;
-	String path;
-	
-	Map<String, Object> replacements = new HashMap<>();
+    private Lang lang;
+	private String path;
+	private TextColor contextColor = TextColors.RESET;
+	private TextStyle contextStyle = TextStyles.RESET;
+
+    private Map<String, Object> replacements = new HashMap<>();
 	/** Calls toString on replacements when resolving
 	 * returns the same Localized for easy chaining. */
-	public LocalizedText replace(String charSequence, Object replacement) {
+    @Override
+    public LocalizedText replace(String charSequence, Object replacement) {
 		replacements.put(charSequence, replacement);
 		return this;
 	}
-	
-//	private Text replace(String string) {
-//		if (lang==null)return Text.of(path);
-//		List<Object> elements = new LinkedList<>();
-//		Set<String> unusedPlaceholders = new HashSet<>();
-//		unusedPlaceholders.addAll(replacements.keySet()); //for translators
-//		elements.add(string);
-//		boolean round=true;
-//		while (round) {
-//			round=false;
-//			i: for (int i=0; i<elements.size(); i++) {
-//				if (elements.get(i) instanceof String) {
-//					String val = (String)elements.get(i);
-//					for (Entry<String, Object> e : replacements.entrySet()) {
-//						int pos=val.indexOf(e.getKey());
-//						if (pos>=0) { round=true;
-//							unusedPlaceholders.remove(e.getKey());
-//
-//							if (pos+e.getKey().length()<val.length())
-//								elements.add(i+1, val.substring(pos+e.getKey().length()));
-//							elements.add(i+1, e.getValue());
-//							if (pos>0)
-//								elements.add(i+1, val.substring(0, pos));
-//							elements.remove(i);
-//
-//							break i;
-//						}
-//					}
-//				}
-//			}
-//		}
-//		if (!unusedPlaceholders.isEmpty() && LangSwitch.verbose)
-//			LangSwitch.l("Localisation %s does not use the following placeholder: %s", path, StringUtils.join(unusedPlaceholders, ", "));
-//
-////		Text.Builder result = Text.builder();
-////		for (Object o : elements)
-////			if (o instanceof Text)
-////				result.append((Text)o);
-////			//not deserializing legacy code is the only thing that let's them work in this case, since they need to apply for the rest of the result
-//////			else if (o instanceof String)
-//////				result.append( TextSerializers.FORMATTING_CODE.deserializeUnchecked((String)o) );
-//////				result.append( TextSerializers.LEGACY_FORMATTING_CODE.deserializeUnchecked((String)o) );
-////			else
-////				result.append(Text.of(o));
-////		return result.build();
-//		return Text.of(elements.toArray(new Object[0]));
-//	}
 
 	/**
 	 * Takes the raw translation string, inserts registered replacements
 	 * and returns the result as text
 	 */
-	private Text replace(String string) {
-		Spannable raw = Spannable.from(string);
+	private Text getLocal(String string, Locale locale) {
+//		Spannable raw = Spannable.from(TextSerializers.formattingCode('\u00a7').deserialize(string));
+//		Spannable raw = Spannable.from(string);
+		Spannable raw = Spannable.parseSerialized(string, '\u00a7');
 		Set<String> unusedPlaceholders = new HashSet<>(replacements.keySet());
 		for (Entry<String, Object> entry : replacements.entrySet()) {
 			Text replacement;
 			if (raw.toString().contains(entry.getKey())) {
 				unusedPlaceholders.remove(entry.getKey()); //placeholder is used
 
-				if (entry.getValue() instanceof Text) {
+				if (entry.getValue() instanceof Localized) {
+					Object loc = ((Localized) entry.getValue()).orLiteral(locale);
+					replacement = (loc instanceof Text) ? (Text)loc : Text.of(loc);
+				} else if (entry.getValue() instanceof Text) {
 					replacement = (Text) entry.getValue();
 				} else {
 					replacement = Text.of(entry.getValue());
@@ -92,7 +57,7 @@ public class LocalizedText implements Localized<Text> {
 		}
 		if (!unusedPlaceholders.isEmpty() && LangSwitch.verbose)
 			LangSwitch.l("Localisation %s does not use the following placeholder: %s", path, StringUtils.join(unusedPlaceholders, ", "));
-		return raw.toText();
+		return raw.toText(contextColor,contextStyle);
 	}
 	
 	LocalizedText(String path) {
@@ -103,37 +68,133 @@ public class LocalizedText implements Localized<Text> {
 		lang=yourLang;
 		this.path=path;
 	}
-	public Optional<Text> resolve(CommandSource src) {
+	@Override
+    public Optional<Text> resolve(CommandSource src) {
 		if (lang==null)return Optional.empty();
 		if (src instanceof Player) return resolve((Player)src);
 		Optional<String> optional = lang.query(path, lang.def, null);
-		if (!optional.isPresent()) return Optional.empty();
-		return Optional.of(replace(optional.get()));
-	}
-	public Optional<Text> resolve(Player player) {
+        return optional.map(s->getLocal(s,lang.def));
+    }
+    @Override
+    public Optional<Text> resolve(Player player) {
 		return resolve(player.getUniqueId());
 	}
-	public Optional<Text> resolve(GameProfile player) {
+    @Override
+    public Optional<Text> resolve(GameProfile player) {
 		return resolve(player.getUniqueId());
 	}
-	public Optional<Text> resolve(UUID playerID) {
+    @Override
+    public Optional<Text> resolve(UUID playerID) {
 		if (lang==null)return Optional.empty();
 		Locale loc = LangSwitch.playerLang.get(playerID);
 		return resolve(loc);
 	}
-	public Optional<Text> resolve(Locale language) {
+    @Override
+    public Optional<Text> resolve(Locale language) {
 		Optional<String> optional = lang.query(path, language, lang.def);
-		if (!optional.isPresent()) return Optional.empty();
-		return Optional.of(replace(optional.get()));
+        return optional.map(s->getLocal(s,language));
+    }
+
+    @Override
+    public Text orLiteral(CommandSource src) {
+        if (lang==null) return getLocal(path, null);
+        if (src instanceof Player) return orLiteral((Player)src);
+        String template = lang.query(path, lang.def, null, true).orElse(path);
+        return getLocal(template, lang.def);
+    }
+    @Override
+    public Text orLiteral(Player player) {
+        return orLiteral(player.getUniqueId());
+    }
+    @Override
+    public Text orLiteral(GameProfile player) {
+        return orLiteral(player.getUniqueId());
+    }
+    @Override
+    public Text orLiteral(UUID playerID) {
+        if (lang==null) return getLocal(path, null);
+        return orLiteral(LangSwitch.playerLang.get(playerID));
+    }
+    @Override
+    public Text orLiteral(Locale locale) {
+		if (lang==null) return getLocal(path, null);
+        return getLocal(lang.query(path, locale, lang.def, true).orElse(path), locale);
+    }
+
+    /**
+     * Text actually sucks hard and TextColor.NONE / TextStyle.NONE
+     * do not END styles / colors but actually literally do not contain
+     * styles / colors. For spannable to text conversion it is important
+     * for me to revert styles after a span, but since i can not cleanly
+     * terminate single styles / colors i have to perform a full RESET
+     * and reapply "unstyled" styles that match the overall style of the
+     * Text. The defaults are RESET style / color.
+	 * @param contextColor the color to reset to between spans
+	 * @return self for chaining
+	 */
+    public LocalizedText setContextColor(TextColor contextColor) {
+		this.contextColor = contextColor;
+		return this;
 	}
-	/** tries to get the default translation or returns the path if not found */
+	/**
+	 * Text actually sucks hard and TextColor.NONE / TextStyle.NONE
+	 * do not END styles / colors but actually literally do not contain
+	 * styles / colors. For spannable to text conversion it is important
+	 * for me to revert styles after a span, but since i can not cleanly
+	 * terminate single styles / colors i have to perform a full RESET
+	 * and reapply "unstyled" styles that match the overall style of the
+	 * Text. The defaults are RESET style / color.
+	 * @param contextStyle the style to reset to between spans
+	 * @return self for chaining
+	 */
+	public LocalizedText setContextStyle(TextStyle contextStyle) {
+		this.contextStyle = contextStyle;
+		return this;
+	}
+	/**
+	 * Text actually sucks hard and TextColor.NONE / TextStyle.NONE
+	 * do not END styles / colors but actually literally do not contain
+	 * styles / colors. For spannable to text conversion it is important
+	 * for me to revert styles after a span, but since i can not cleanly
+	 * terminate single styles / colors i have to perform a full RESET
+	 * and reapply "unstyled" styles that match the overall style of the
+	 * Text. The defaults are RESET style / color.
+	 * @param contextColor the color to reset to between spans
+	 * @param contextStyle the style to reset to between spans
+	 * @return self for chaining
+	 */
+	public LocalizedText setContextFormat(TextColor contextColor, TextStyle contextStyle) {
+		this.contextColor = contextColor;
+		this.contextStyle = contextStyle;
+		return this;
+	}
+	/**
+	 * Text actually sucks hard and TextColor.NONE / TextStyle.NONE
+	 * do not END styles / colors but actually literally do not contain
+	 * styles / colors. For spannable to text conversion it is important
+	 * for me to revert styles after a span, but since i can not cleanly
+	 * terminate single styles / colors i have to perform a full RESET
+	 * and reapply "unstyled" styles that match the overall style of the
+	 * Text. The defaults are RESET style / color.
+	 * @param formattedText flat text object formatted with the style / color to reset to between spans
+	 * @return self for chaining
+	 */
+	public LocalizedText setContextFormat(Text formattedText) {
+		contextColor = formattedText.getColor();
+		contextStyle = formattedText.getStyle();
+		return this;
+	}
+
+    /** tries to get the default translation or returns the path if not found */
 	@Override
 	public String toString() {
+		if (lang==null) return getLocal(path, null).toPlain();
 		String result = lang.get(path, lang.def, null);
-		return replace(result).toPlain();
+		return getLocal(result, null).toPlain();
 	}
 	public Text toText() {
+		if (lang==null) return getLocal(path, null);
 		String result = lang.get(path, lang.def, null);
-		return replace(result);
+		return getLocal(result, lang.def);
 	}
 }

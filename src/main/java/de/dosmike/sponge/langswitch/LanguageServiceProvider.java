@@ -29,7 +29,7 @@ public class LanguageServiceProvider implements LanguageService {
 //		LangSwitch.l("Register plugin "+id+" with "+LangSwitch.serverDefault.toString()+" as default language");
 		Lang newLang = new Lang(LangSwitch.serverDefault);
 		LangSwitch.plugins.put(id, newLang);
-		LangSwitch.loadLang(LangSwitch.serverDefault);
+		LangSwitch.loadSingleLang(LangSwitch.serverDefault, id, newLang);
 		return newLang;
 	}
 

@@ -29,6 +29,7 @@ import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.profile.GameProfile;
 import org.spongepowered.api.profile.property.ProfileProperty;
+import org.spongepowered.api.scheduler.SpongeExecutorService;
 import org.spongepowered.api.text.Text;
 
 import java.io.*;
@@ -36,13 +37,14 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.Map.Entry;
 
-@Plugin(id="langswitch", name="LangSwitch", authors="DosMike", version="1.5")
+@Plugin(id="langswitch", name="LangSwitch", authors="DosMike", version="1.6")
 public class LangSwitch {
-	static LangSwitch instance;
+	private static LangSwitch instance;
 //	static Lang myL;
-	static String[] available;
+	private static String[] available;
 
 	static boolean verbose=true;
+	private static SpongeExecutorService async;
 
 	static {
 		Locale[] locs = Locale.getAvailableLocales();
@@ -51,6 +53,7 @@ public class LangSwitch {
 	}
 	@Listener(order=Order.FIRST)
 	public void init(GameInitializationEvent event) { instance = this; //myL=L.createLang(this);
+		async = Sponge.getScheduler().createAsyncExecutor(instance);
 		reload();
 	
 		Sponge.getServiceManager().setProvider(this, LanguageService.class, new LanguageServiceProvider());
@@ -211,52 +214,54 @@ public class LangSwitch {
 		loadLang(newLang);
 		unloadLangIfUnused(lang);
 	}
-	
-	public static void loadLang(Locale lang) {
-//		l("Loading translations for %s...", lang.toString());
-		Sponge.getScheduler().createAsyncExecutor(instance).execute(new LocaleRunnable(lang) {
-			public void run() {
-				for (Entry<String, Lang> entry : plugins.entrySet()) {
-					if (verbose) l("Loading translations for %s in %s...", entry.getKey(), getLocale().toString());
-					if (entry.getValue().loaded.contains(getLocale())) return;
-					entry.getValue().loaded.add(getLocale()); //prevent stacking
-					
-					File to = instance.configDir.resolve(entry.getKey()).resolve("Lang").resolve(getLocale().toString()+".lang").toFile();
-					if (!to.exists()) {
-						if (verbose) l("No country specifig translations for "+getLocale().getDisplayLanguage()+", switching to "+getLocale().getLanguage()+".lang");
-						to = new File(to.getParentFile(), getLocale().getLanguage()+".lang");
-						if (!to.exists()) {
-							if (verbose) l("No translation file for "+getLocale().getDisplayLanguage()+" was found!");
-							continue;
-						}
-					}
-//					l("Trying to load " + to.getAbsolutePath());
-					
-					BufferedReader br=null;
-					try {
-						br = new BufferedReader(new InputStreamReader(new FileInputStream(to), "UTF8"));
-						String line;
-						while ((line=br.readLine())!=null) {
-							if (line.isEmpty() || line.startsWith("#")) continue;
-							int split = first(line.indexOf(':'), line.indexOf('=')); //allow the usage of either key.sub:value or key.sub=value
-							if (split<=0) throw new RuntimeException("Translations are formatted [\\w\\.]+:.* (numers, letters underscores and dots > colon > some text)");
-							String k=line.substring(0, split);
-							if (!k.matches("[\\w\\.]+")) throw new RuntimeException("Translations are formatted [\\w\\.]+:.* (numers, letters underscores and dots > colon > some text)");
-							String v=line.substring(split+1);
-//							l("  Adding %s in %s with: %s", k, getLocale().toString(), v);
-							entry.getValue().addTranslation(k, getLocale(), v);
-						}
-					}
-					catch (FileNotFoundException|SecurityException e) {}
-					catch (IOException|RuntimeException e) {
-						e.printStackTrace();
-					}
-					finally {
-						try { br.close(); } catch (Exception e) {}
-					}
-				}
+
+	static void loadSingleLang(Locale lang, String pluginID, Lang pluginTranslation) {
+		async.execute(()->loadSingleLangRunner(lang, pluginID, pluginTranslation));
+	}
+	static void loadSingleLangRunner(Locale lang, String pluginID, Lang pluginTranslation) {
+		if (pluginTranslation.loaded.contains(lang)) return;
+		if (verbose) l("Loading translations for %s in %s...", pluginID, lang.toString());
+		pluginTranslation.loaded.add(lang); //prevent stacking
+
+		File to = instance.configDir.resolve(pluginID).resolve("Lang").resolve(lang.toString()+".lang").toFile();
+		if (!to.exists()) {
+			to = new File(to.getParentFile(), lang.getLanguage()+".lang");
+			if (!to.exists()) {
+				if (verbose) l("No translation file for "+lang.getDisplayLanguage()+" was found!");
+				return;
+			} else {
+				if (verbose) l("No country specifig translations for "+lang.getDisplayLanguage()+", switching to "+lang.getLanguage()+".lang");
 			}
-		});
+		}
+//		l("Trying to load " + to.getAbsolutePath());
+
+		BufferedReader br=null;
+		try {
+			br = new BufferedReader(new InputStreamReader(new FileInputStream(to), "UTF8"));
+			String line;
+			while ((line=br.readLine())!=null) {
+				if (line.isEmpty() || line.startsWith("#")) continue;
+				int split = first(line.indexOf(':'), line.indexOf('=')); //allow the usage of either key.sub:value or key.sub=value
+				if (split<=0) throw new RuntimeException("Translations are formatted [\\w\\.]+:.* (numers, letters underscores and dots > colon > some text)");
+				String k=line.substring(0, split);
+				if (!k.matches("[\\w\\.]+")) throw new RuntimeException("Translations are formatted [\\w\\.]+:.* (numers, letters underscores and dots > colon > some text)");
+				String v=line.substring(split+1);
+//							l("  Adding %s in %s with: %s", k, getLocale().toString(), v);
+				pluginTranslation.addTranslation(k, lang, v);
+			}
+		}
+		catch (FileNotFoundException|SecurityException e) {}
+		catch (IOException|RuntimeException e) {
+			e.printStackTrace();
+		}
+		finally {
+			try { br.close(); } catch (Exception e) {}
+		}
+	}
+	public static void loadLang(Locale lang) {
+		for (Entry<String, Lang> entry : plugins.entrySet()) {
+			loadSingleLangRunner(lang, entry.getKey(), entry.getValue());
+		}
 	}
 	
 	private static int first(int a, int b) {

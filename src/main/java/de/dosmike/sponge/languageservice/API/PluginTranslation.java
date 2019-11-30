@@ -26,6 +26,17 @@ public interface PluginTranslation {
 	 * @param lang the locale to return
 	 * @return the translation for lang or the default locale */
 	public String get(String path, Locale lang);
+
+	/** checks if a translation for this path exists for the given locale
+	 * @param path the path to search for
+	 * @param lang the locale to search
+	 * @return true if a translation with this path exists in the given locale */
+	public boolean has(String path, Locale lang);
+	/** checks if a translation for this path exists for the given locale or the default locale
+	 * @param path the path to search for
+	 * @param lang the locale to search
+	 * @return true if a translation with this path exists in the given locale */
+	public boolean hasOrDefault(String path, Locale lang);
 	
 	/** Returns a {@link Localized} that accepts replace parameters and has no defined language yet.
 	 * This localized to return a String one resolved for a CommandSource
