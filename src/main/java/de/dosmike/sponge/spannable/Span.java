@@ -43,9 +43,9 @@ public interface Span {
      */
     int length();
     /**
-     * Applies this span to a @link{TextBuilder} element.
+     * Applies this span to a {@link Text.Builder} element.
      * This does not append anything, but is required since
-     * @link{Text} has no setter.
+     * {@link Text} has no setter.
      * @param text the text to format with this span
      */
     void apply(Text.Builder text);
