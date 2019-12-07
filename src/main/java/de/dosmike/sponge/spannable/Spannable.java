@@ -900,7 +900,7 @@ public class Spannable implements CharSequence {
                     resetStyle.applyTo(builder);
                 }
                 if (!actClick.isEmpty()) actClick.getLast().apply(builder);
-                if (!actShiftClick.isEmpty()) actClick.getLast().apply(builder);
+                if (!actShiftClick.isEmpty()) actShiftClick.getLast().apply(builder);
                 if (!actHover.isEmpty()) actHover.getLast().apply(builder);
                 resultBuilder.append(builder.build());
             }
